@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Safe Manager UMLダイアグラム</title>
+    <!-- Prevent favicon 404 error -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+    <style>
+      /* CSS Variables for modern design system */
+      :root {
+        --bg-primary: #111418;
+        --bg-secondary: #1d2129;
+        --bg-card: #262b34;
+        --accent-primary: #3dd5f3;
+        --accent-warning: #ffc970;
+        --accent-success: #4ade80;
+        --accent-danger: #f87171;
+        --text-primary: #e4e6eb;
+        --text-secondary: #8a8f98;
+        --border-subtle: rgba(228, 230, 235, 0.1);
+        --radius: 8px;
+        --radius-lg: 12px;
+        --gap: 1.5rem;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Microsoft JhengHei", sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        min-height: 100vh;
+        line-height: 1.6;
+        /* Subtle noise texture for depth */
+        background-image: radial-gradient(
+            circle at 20% 50%,
+            rgba(61, 213, 243, 0.03) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 80% 80%,
+            rgba(61, 213, 243, 0.02) 0%,
+            transparent 50%
+          );
+      }
+
+      .container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      /* Bento Grid Layout - Asymmetric for visual interest */
+      .bento-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: var(--gap);
+        margin-top: 2rem;
+      }
+
+      @media (min-width: 768px) {
+        .bento-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      /* Bento Card Base */
+      .bento-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        position: relative;
+        /* Subtle inner shadow for depth */
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03),
+          0 1px 3px rgba(0, 0, 0, 0.5);
+        transition: border-color 0.2s ease;
+      }
+
+      .bento-card:hover {
+        border-color: rgba(61, 213, 243, 0.3);
+      }
+
+      /* Span variations for Bento Grid */
+      .bento-card.span-2 {
+        grid-column: span 2;
+      }
+
+      .bento-card.span-3 {
+        grid-column: span 3;
+      }
+
+      .bento-card.tall {
+        grid-row: span 2;
+      }
+
+      /* Header card styling */
+      .header-card {
+        background: linear-gradient(
+          135deg,
+          var(--bg-card) 0%,
+          rgba(61, 213, 243, 0.05) 100%
+        );
+        border-color: rgba(61, 213, 243, 0.2);
+      }
+
+      h1 {
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.02em;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      h1::before {
+        content: "";
+        width: 4px;
+        height: 2rem;
+        background: var(--accent-primary);
+        border-radius: 2px;
+      }
+
+      .subtitle {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+        margin-top: 0.5rem;
+      }
+
+      .diagram-title {
+        color: var(--accent-primary);
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .diagram-title::before {
+        content: "";
+        width: 3px;
+        height: 1.2rem;
+        background: var(--accent-primary);
+        border-radius: 2px;
+      }
+
+      .diagram-description {
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+        line-height: 1.7;
+      }
+
+      /* Mermaid container styling */
+      .mermaid {
+        background: var(--bg-secondary);
+        border-radius: var(--radius);
+        padding: 1.5rem;
+        overflow-x: auto;
+        border: 1px solid var(--border-subtle);
+      }
+
+      /* Reference block */
+      .reference {
+        background: rgba(61, 213, 243, 0.05);
+        border-left: 3px solid var(--accent-primary);
+        padding: 1rem;
+        margin-top: 1.5rem;
+        border-radius: 0 var(--radius) var(--radius) 0;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+      }
+
+      .reference strong {
+        color: var(--accent-primary);
+      }
+
+      /* Concept explanation cards */
+      .concept-section {
+        padding: 1.5rem;
+      }
+
+      .concept-title {
+        color: var(--accent-primary);
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .concept-content {
+        background: var(--bg-secondary);
+        padding: 1.25rem;
+        border-radius: var(--radius);
+        margin-bottom: 1.25rem;
+        border: 1px solid var(--border-subtle);
+      }
+
+      .concept-content p {
+        margin: 0 0 0.75rem 0;
+        line-height: 1.7;
+        color: var(--text-secondary);
+      }
+
+      .concept-content strong {
+        color: var(--text-primary);
+      }
+
+      /* Code block styling */
+      .code-block {
+        background: var(--bg-primary);
+        padding: 1rem;
+        border-radius: var(--radius);
+        font-family: "SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        overflow-x: auto;
+        border: 1px solid var(--border-subtle);
+      }
+
+      /* Modern table design */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--bg-secondary);
+        border-radius: var(--radius);
+        overflow: hidden;
+        margin: 1rem 0;
+      }
+
+      thead {
+        background: var(--bg-card);
+      }
+
+      th {
+        color: var(--accent-primary);
+        font-weight: 600;
+        text-align: left;
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-subtle);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-subtle);
+        color: var(--text-secondary);
+      }
+
+      tbody tr:hover {
+        background: rgba(61, 213, 243, 0.03);
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      /* Status indicators in tables */
+      .status-check {
+        color: var(--accent-success);
+        font-size: 1.25rem;
+      }
+
+      .status-cross {
+        color: var(--accent-danger);
+        font-size: 1.25rem;
+      }
+
+      /* Summary box styling */
+      .summary-box {
+        background: linear-gradient(
+          135deg,
+          rgba(61, 213, 243, 0.1) 0%,
+          rgba(61, 213, 243, 0.05) 100%
+        );
+        border: 1px solid rgba(61, 213, 243, 0.2);
+        padding: 1.25rem;
+        border-radius: var(--radius);
+        margin-top: 1.5rem;
+      }
+
+      .summary-box strong {
+        color: var(--accent-primary);
+      }
+
+      /* Formula box */
+      .formula-box {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        padding: 1.5rem;
+        border-radius: var(--radius);
+        border: 1px solid rgba(61, 213, 243, 0.2);
+        margin-top: 1rem;
+        text-align: center;
+      }
+
+      .formula-box strong {
+        color: var(--accent-primary);
+        display: block;
+        margin-bottom: 0.75rem;
+      }
+
+      .formula-content {
+        font-size: 1.1rem;
+        line-height: 2;
+      }
+
+      .formula-content span {
+        display: block;
+        margin: 0.25rem 0;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        .bento-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .bento-card.span-2,
+        .bento-card.span-3 {
+          grid-column: span 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header Section -->
+      <div class="bento-grid">
+        <div class="bento-card header-card span-3">
+          <h1>Safe Manager 権限システムアーキテクチャ</h1>
+          <p class="subtitle">UMLダイアグラムとコア概念解析ドキュメント</p>
+        </div>
+
+        <!-- Main Diagram Card -->
+        <div class="bento-card span-2">
+          <h2 class="diagram-title">ドメインモデル図</h2>
+          <p class="diagram-description">
+            User、Team、Role、DeviceGroup、Device 5つのエンティティ間の関連構造を表示
+          </p>
+          <div class="mermaid">
+            classDiagram
+              direction LR
+
+              class User {
+                +userId
+                +email
+                +status
+                --作成方法--
+                +createdViaForm()
+                +createdViaCSV()
+              }
+
+              class Team {
+                +teamId
+                +name
+                +parentTeamId
+                +maxChildren=100
+              }
+
+              class Role {
+                +roleId
+                +name
+                +isDefault
+                +permissions[*]
+              }
+
+              class DeviceGroup {
+                +groupId
+                +name
+                +parentGroupId
+                +maxChildren=100
+              }
+
+              class Device {
+                +deviceId
+                +name
+              }
+
+              Team "1" -- "*" User : 含む / 所属
+              Role "1" -- "*" Team : 適用
+              DeviceGroup "1" -- "*" Device : 含む
+              Team "*" -- "*" DeviceGroup : 権限リンク
+          </div>
+          <div class="reference">
+            <strong>データソース：</strong>システム設計ドキュメント -
+            ロールの設定、ユーザーの作成、グループ/チームの階層構造
+          </div>
+        </div>
+
+        <!-- Quick Info Card -->
+        <div class="bento-card">
+          <h2 class="diagram-title">キー特性</h2>
+          <div class="concept-content">
+            <p>
+              <strong>階層制限：</strong>TeamとDeviceGroup
+              ともに階層構築可能、直下ノード上限100個
+            </p>
+            <p><strong>ユーザー作成：</strong>フォーム作成とCSVバッチインポートに対応</p>
+            <p>
+              <strong>権限モデル：</strong>ロールベース権限制御、Teamを通じて間接的に付与
+            </p>
+          </div>
+        </div>
+
+        <!-- Core Concepts Section -->
+        <div class="bento-card span-3">
+          <h2 class="diagram-title">コアコンセプト解析</h2>
+
+          <div class="concept-section">
+            <h3 class="concept-title">🎭 Role（ロール）とは？</h3>
+            <div class="concept-content">
+              <p>
+                <strong>キー特性：</strong>Roleは再利用可能な権限セットテンプレートで、
+                Teamを通じて間接的にユーザーに付与され、個別ユーザーに直接バインドされません。
+              </p>
+            </div>
+
+            <h3 class="concept-title">👥 TeamとUserの関係</h3>
+            <div class="concept-content">
+              <p>
+                <strong>重要特性：</strong>同一Teamに属するすべてのUserは
+                同じRoleが適用されます。
+              </p>
+              <p>
+                <strong>そのため権限区分は複数の異なるTeamの作成により実現されます：</strong>
+              </p>
+              <div class="code-block">
+                管理者Team (「管理者Role」適用)<br />
+                &nbsp;&nbsp;├─ User A<br />
+                &nbsp;&nbsp;└─ User B<br />
+                <br />
+                一般社員Team (「一般社員Role」適用)<br />
+                &nbsp;&nbsp;├─ User C<br />
+                &nbsp;&nbsp;├─ User D<br />
+                &nbsp;&nbsp;└─ User E
+              </div>
+              <p>
+                <strong>柔軟な対応：</strong>Userは複数のTeamに同時に所属でき、
+                複数のRoleの権限を統合して取得できます。
+              </p>
+            </div>
+
+            <h3 class="concept-title">🔗 TeamとDeviceGroupの紐づけ関係</h3>
+            <div class="concept-content">
+              <p>
+                <strong>Team-DeviceGroup関係</strong>は
+                <strong>権限制御システム</strong>における<strong>権限範囲マッピング</strong>です。
+              </p>
+              <p>
+                <strong>キー差異：</strong>
+                これは多対多の範囲バインディング（紐づけ）で、「誰がどのデバイスを見られるか」を決定し、「誰がリソースに対して何ができるか」ではありません。
+              </p>
+
+              <div class="summary-box">
+                <strong>完全な権限パス：</strong>
+                <div class="code-block" style="margin-top: 1rem">
+                  User → (所属) Team → (適用) Role + (紐づけ) DeviceGroup →
+                  (含む) Device<br />
+                  <span style="opacity: 0.6">
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br />
+                    &nbsp;&nbsp;&nbsp;身分帰属&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;何ができるか&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;どのデバイスが見えるか
+                  </span>
+                </div>
+              </div>
+
+              <p>
+                <strong>複数Team例：</strong>User Aは
+                「営業部Team」と「ManagerTeam」に同時に所属でき、両Teamが
+                それぞれ紐づけされたすべてのDeviceGroupに接続できます。
+              </p>
+            </div>
+
+            <h3 class="concept-title">⚙️ Roleは何に影響する？</h3>
+            <div class="concept-content">
+              <p><strong>Roleが決定するもの：</strong>「デバイスに対して何ができるか」</p>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>操作権限</th>
+                    <th style="text-align: center">一般社員Role</th>
+                    <th style="text-align: center">管理者Role</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>リアルタイム視聴</td>
+                    <td style="text-align: center">
+                      <span class="status-check">✓</span>
+                    </td>
+                    <td style="text-align: center">
+                      <span class="status-check">✓</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>録画履歴の再生</td>
+                    <td style="text-align: center">
+                      <span class="status-cross">✗</span>
+                    </td>
+                    <td style="text-align: center">
+                      <span class="status-check">✓</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>動画のダウンロード/エクスポート</td>
+                    <td style="text-align: center">
+                      <span class="status-cross">✗</span>
+                    </td>
+                    <td style="text-align: center">
+                      <span class="status-check">✓</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>カメラ設定の調整</td>
+                    <td style="text-align: center">
+                      <span class="status-cross">✗</span>
+                    </td>
+                    <td style="text-align: center">
+                      <span class="status-check">✓</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>ユーザー権限の管理</td>
+                    <td style="text-align: center">
+                      <span class="status-cross">✗</span>
+                    </td>
+                    <td style="text-align: center">
+                      <span class="status-check">✓</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="formula-box">
+                <strong>完全な権限制御の公式：</strong>
+                <div class="formula-content">
+                  ユーザーが実際にできること =<br />
+                  <span>Team-DeviceGroup 紐づけ（どのデバイスが見えるか）</span>
+                  <span>×</span>
+                  <span>Role permissions（これらのデバイスに対して何ができるか）</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary Card -->
+        <div class="bento-card span-3">
+          <h2 class="diagram-title">📌 まとめ：制御の次元</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>制御の次元</th>
+                <th>何によって決定されるか</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>どのデバイスが見えるか（範囲）</td>
+                <td><strong>Team-DeviceGroup 紐づけ</strong></td>
+              </tr>
+              <tr>
+                <td>デバイスに対して何ができるか（操作）</td>
+                <td><strong>RoleのPermissions[*]</strong></td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-top: 1rem; color: var(--text-secondary)">
+            両者は独立しながら相互補完的な制御次元であり、ユーザーの完全な権限を共同で決定します。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Mermaid configuration for dark mode
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "dark",
+        themeVariables: {
+          primaryColor: "#262b34",
+          primaryTextColor: "#e4e6eb",
+          primaryBorderColor: "#3dd5f3",
+          lineColor: "#3dd5f3",
+          secondaryColor: "#1d2129",
+          tertiaryColor: "#111418",
+          background: "#262b34",
+          mainBkg: "#262b34",
+          secondBkg: "#1d2129",
+          tertiaryBkg: "#111418",
+          classText: "#e4e6eb",
+          labelColor: "#e4e6eb",
+          fillType0: "#262b34",
+          fillType1: "#1d2129",
+          fillType2: "#111418",
+          fillType3: "#262b34",
+          fillType4: "#1d2129",
+          fillType5: "#111418",
+          fillType6: "#262b34",
+          fillType7: "#1d2129",
+        },
+      });
+    </script>
+  </body>
+</html>
