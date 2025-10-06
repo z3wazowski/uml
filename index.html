@@ -352,16 +352,24 @@
         <div class="bento-card span-2">
           <h2 class="diagram-title">ドメインモデル図</h2>
           <p class="diagram-description">
-            User、Team、Role、DeviceGroup、Device 5つのエンティティ間の関連構造を表示
+            Department、User、Team、Role、DeviceGroup、Device 6つのエンティティ間の関連構造を表示
           </p>
           <div class="mermaid">
             classDiagram
-              direction LR
+              direction TB
+
+              class Department {
+                +departmentId
+                +name
+                --権限境界--
+                +getAllDevices()
+              }
 
               class User {
                 +userId
                 +email
                 +status
+                +userType
                 --作成方法--
                 +createdViaForm()
                 +createdViaCSV()
@@ -393,14 +401,23 @@
                 +name
               }
 
-              Team "1" -- "*" User : 含む / 所属
+              Department "1" -- "*" Team : 含む
+              Department "1" -- "*" DeviceGroup : 特権アクセス
+              Department "0..1" -- "*" User : 部門管理者
+              Team "1" -- "*" User : 一般ユーザー所属
               Role "1" -- "*" Team : 適用
               DeviceGroup "1" -- "*" Device : 含む
-              Team "*" -- "*" DeviceGroup : 権限リンク
+              Team "*" -- "*" DeviceGroup : 紐づけ
           </div>
           <div class="reference">
             <strong>データソース：</strong>システム設計ドキュメント -
-            ロールの設定、ユーザーの作成、グループ/チームの階層構造
+            ロールの設定、ユーザーの作成、グループ/チームの階層構造、部門管理
+          </div>
+          <div class="concept-content" style="margin-top: 0.5rem; background: rgba(248, 113, 113, 0.1); border-left: 3px solid var(--accent-danger);">
+            <p style="color: var(--text-primary); margin: 0;">
+              <strong style="color: var(--accent-danger);">⚠️ 特権アクセス：</strong>
+              Department → DeviceGroup の関係は部門管理者の特権パスです。Team-DeviceGroup紐づけをバイパスします。
+            </p>
           </div>
         </div>
 
@@ -415,6 +432,63 @@
             <p><strong>ユーザー作成：</strong>フォーム作成とCSVバッチインポートに対応</p>
             <p>
               <strong>権限モデル：</strong>ロールベース権限制御、Teamを通じて間接的に付与
+            </p>
+            <p>
+              <strong>部門隔離：</strong>Departmentによる権限境界、部門管理者の特権アクセス
+            </p>
+          </div>
+        </div>
+
+        <!-- Department Architecture Diagram -->
+        <div class="bento-card span-3">
+          <h2 class="diagram-title">部門アーキテクチャ図</h2>
+          <p class="diagram-description">
+            部門による権限隔離と管理者権限の階層構造
+          </p>
+          <div class="mermaid">
+            graph TB
+              subgraph 組織全体
+                Admin[全体管理者]
+
+                subgraph 部門A
+                  DeptAdminA[部門管理者A]
+                  TeamA1[Team A1]
+                  TeamA2[Team A2]
+                  DGA1[DeviceGroup A1]
+                  DGA2[DeviceGroup A2]
+
+                  DeptAdminA -.管理.-> TeamA1
+                  DeptAdminA -.管理.-> TeamA2
+                  DeptAdminA ==特権アクセス==> DGA1
+                  DeptAdminA ==特権アクセス==> DGA2
+                end
+
+                subgraph 部門B
+                  DeptAdminB[部門管理者B]
+                  TeamB1[Team B1]
+                  DGB1[DeviceGroup B1]
+
+                  DeptAdminB -.管理.-> TeamB1
+                  DeptAdminB ==特権アクセス==> DGB1
+                end
+
+                Admin ==> 部門A
+                Admin ==> 部門B
+              end
+
+              TeamA1 -.紐づけ.-> DGA1
+              TeamA2 -.紐づけ.-> DGA2
+              TeamB1 -.紐づけ.-> DGB1
+          </div>
+          <div class="concept-content" style="margin-top: 1rem;">
+            <p>
+              <strong>部門の役割：</strong>組織を論理的に分割し、各部門に管理者を配置することで分散管理を実現
+            </p>
+            <p>
+              <strong>権限隔離：</strong>部門管理者は自部門のリソースのみ編集可能、他部門は不可視
+            </p>
+            <p style="color: var(--accent-danger);">
+              <strong>太い二重線（==）：</strong>部門管理者の特権アクセスパス。Team-DeviceGroup紐づけをバイパスして直接アクセス可能
             </p>
           </div>
         </div>
@@ -432,7 +506,78 @@
               </p>
             </div>
 
-            <h3 class="concept-title">👥 TeamとUserの関係</h3>
+            <h3 class="concept-title">🔑 UserType（ユーザータイプ）階層</h3>
+            <div class="concept-content">
+              <p>
+                <strong>4つの権限レベル：</strong>ユーザーはuserType属性により4つの権限レベルに分類されます。
+              </p>
+
+              <table style="margin-top: 1rem;">
+                <thead>
+                  <tr>
+                    <th>UserType</th>
+                    <th>Safie Manager</th>
+                    <th>Safie Viewer</th>
+                    <th>編集権限</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>全体管理者</strong></td>
+                    <td>全て操作可能</td>
+                    <td>全デバイス視聴可能</td>
+                    <td style="text-align: center">✅</td>
+                  </tr>
+                  <tr>
+                    <td><strong>管理者</strong></td>
+                    <td>全て閲覧のみ</td>
+                    <td>権限のあるデバイスのみ</td>
+                    <td style="text-align: center">❌</td>
+                  </tr>
+                  <tr>
+                    <td><strong>部門管理者</strong></td>
+                    <td>部門内のみ編集可能</td>
+                    <td>部門内全デバイス + 権限のあるデバイス</td>
+                    <td style="text-align: center">✅（部門内）</td>
+                  </tr>
+                  <tr>
+                    <td><strong>利用者</strong></td>
+                    <td>アクセス不可</td>
+                    <td>権限のあるデバイスのみ</td>
+                    <td style="text-align: center">❌</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="summary-box" style="margin-top: 1rem;">
+                <strong>重要：</strong>部門管理者は部門に直接含まれるすべてのDeviceを視聴可能。
+                Team-DeviceGroup紐づけルールをバイパスする特権を持つ。
+              </div>
+
+              <div class="concept-content" style="margin-top: 1rem; background: rgba(61, 213, 243, 0.05); border-left: 3px solid var(--accent-primary);">
+                <p style="font-size: 1.1rem; font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">
+                  権限設計の理念：役割分担
+                </p>
+                <pre style="background: transparent; color: var(--text-secondary); font-family: inherit; margin: 0.5rem 0;">
+        全体管理者（最高権限）
+            ／    ＼
+      管理者  ←→  部門管理者
+      (監督)      (実行)
+            ＼    ／
+          利用者（一般）
+                </pre>
+                <p style="margin: 0; line-height: 1.8;">
+                  <strong>管理者と部門管理者は平行関係：</strong><br/>
+                  • <strong>管理者</strong>：全体監督役（全て閲覧可能、編集不可）<br/>
+                  • <strong>部門管理者</strong>：部門実行役（部門内のみ編集可能）<br/>
+                  <span style="opacity: 0.8; font-size: 0.95em;">
+                  これは階層関係ではなく、異なる職責に基づく役割分担です。
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <h3 class="concept-title">👥 TeamとDepartmentによるUser管理</h3>
             <div class="concept-content">
               <p>
                 <strong>重要特性：</strong>同一Teamに属するすべてのUserは
@@ -551,10 +696,12 @@
               <div class="formula-box">
                 <strong>完全な権限制御の公式：</strong>
                 <div class="formula-content">
-                  ユーザーが実際にできること =<br />
-                  <span>Team-DeviceGroup 紐づけ（どのデバイスが見えるか）</span>
-                  <span>×</span>
-                  <span>Role permissions（これらのデバイスに対して何ができるか）</span>
+                  <strong style="color: var(--accent-primary)">一般ユーザー：</strong><br />
+                  実際の権限 = Team-DeviceGroup 紐づけ × Role permissions<br />
+                  <br />
+                  <strong style="color: var(--accent-warning)">部門管理者：</strong><br />
+                  実際の権限 = Department内全Device（直接アクセス） + Team紐づけDevice<br />
+                  <span style="font-size: 0.9em; opacity: 0.8">※ 紐づけルールをバイパスする特権</span>
                 </div>
               </div>
             </div>
@@ -573,17 +720,25 @@
             </thead>
             <tbody>
               <tr>
+                <td>権限隔離（マルチテナント）</td>
+                <td><strong>Department（部門）</strong></td>
+              </tr>
+              <tr>
                 <td>どのデバイスが見えるか（範囲）</td>
-                <td><strong>Team-DeviceGroup 紐づけ</strong></td>
+                <td><strong>Team-DeviceGroup 紐づけ または Department所属</strong></td>
               </tr>
               <tr>
                 <td>デバイスに対して何ができるか（操作）</td>
                 <td><strong>RoleのPermissions[*]</strong></td>
               </tr>
+              <tr>
+                <td>管理権限の有無</td>
+                <td><strong>UserType（全体管理者/部門管理者/一般）</strong></td>
+              </tr>
             </tbody>
           </table>
           <p style="margin-top: 1rem; color: var(--text-secondary)">
-            両者は独立しながら相互補完的な制御次元であり、ユーザーの完全な権限を共同で決定します。
+            Departmentによる権限隔離、UserTypeによる管理階層、Team-Role-DeviceGroupによる細かい権限制御が組み合わさって、柔軟かつ安全な権限システムを構成します。
           </p>
         </div>
       </div>
